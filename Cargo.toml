@@ -1,0 +1,9 @@
+[package]
+name = "prob8"
+version = "0.1.0"
+edition = "2024"
+description = "Calculate how many possible UTF8 strings are there"
+readme = "README.md"
+publish = false
+
+[dependencies]
