@@ -167,7 +167,11 @@ mod tests {
 
     #[test]
     fn count_3_bytes() {
-        let counted = (0x0000_0000..=0x00FF_FFFF).map(u32::to_be_bytes).filter(is_utf8).count();
+        let counted = (0x0000_0000..=0x00FF_FFFF)
+            .map(u32::to_be_bytes)
+            .filter(is_utf8)
+            .count();
+
         let calculated = utf8_counter().nth(3);
         assert_eq!(calculated, counted.to_biguint());
     }

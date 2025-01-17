@@ -55,12 +55,68 @@
 #![warn(clippy::wildcard_enum_match_arm)]
 #![warn(clippy::unnecessary_self_imports)]
 
+use std::process::ExitCode;
+
+use clap::Parser;
+
 mod counter;
 
 use counter::utf8_counter;
+use num_bigint::BigUint;
 
-pub fn main() {
-    for (i, num) in utf8_counter().take(100).enumerate() {
-        println!("{i:02}: {num}");
+/// Calculate how many possible UTF8 strings there are.
+#[derive(Parser, Debug, Clone)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    /// String length to calculate UTF8 possibilies.
+    length: usize,
+    /// Print intermediate values.
+    #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    verbose: bool,
+}
+
+/// Binary entrypoint.
+#[must_use]
+pub fn main() -> ExitCode {
+    let cli = Cli::parse();
+    let Some(length) = cli.length.checked_add(1) else {
+        eprintln!("value too big: {}", cli.length);
+        return ExitCode::FAILURE;
+    };
+
+    let d = digits(cli.length);
+
+    let mut last = BigUint::ZERO;
+    for (i, num) in utf8_counter().take(length).enumerate() {
+        if cli.verbose {
+            eprintln!("{i:>d$}: {num}");
+        }
+        last = num;
+    }
+
+    println!("{last}");
+    ExitCode::SUCCESS
+}
+
+/// Number of decimal digits of number.
+const fn digits(n: usize) -> usize {
+    if n > 0 { n.ilog10() as usize + 1 } else { 1 }
+}
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+
+    use super::*;
+
+    #[test]
+    fn digits_calculation() {
+        let m = usize::MAX;
+        #[rustfmt::skip]
+        let cases = [0, 1, 2, 5, 9, 10, 11, 55, 99, 100, 101, m - 5, m - 4, m - 3, m - 2, m - 1, m];
+
+        for num in cases {
+            assert_eq!(digits(num), num.to_string().len());
+        }
     }
 }
