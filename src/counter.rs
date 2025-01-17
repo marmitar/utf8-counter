@@ -16,23 +16,28 @@ pub struct Utf8Counter {
     inner: Inner,
 }
 
+// Let's ensure Rust uses the right representation.
+static_assertions::assert_eq_size!(Utf8Counter, [BigUint; 4]);
+
+/// Calculates the number of elements in an inclusive range.
 macro_rules! range_len {
-    ($start:literal, $end:literal) => {
-        $end - $start + 1
+    ($start:literal ..= $end:literal) => {
+        if $end >= $start {
+            $end - $start + 1
+        } else {
+            panic!("invalid range")
+        }
     };
 }
 
 /// All 1-byte codepoints, `U+0000` to `U+007F`.
-const C1: u8 = range_len!(0x00, 0x7F);
+const C1: u8 = range_len!(0x00..=0x7F);
 /// All 2-byte codepoints, `U+0080` to `U+07FF`.
-const C2: u16 = range_len!(0x0080, 0x07FF);
+const C2: u16 = range_len!(0x0080..=0x07FF);
 /// All 3-byte codepoints, `U+0800` to `U+FFFF`, except for surrogates, `U+D800` to `U+DFFF`.
-const C3: u16 = range_len!(0x0800, 0xFFFF) - range_len!(0xD800, 0xDFFF);
+const C3: u16 = range_len!(0x0800..=0xFFFF) - range_len!(0xD800..=0xDFFF);
 /// All 4-byte codepoints, `U+10000` to `U+10FFFF`.
-const C4: u32 = range_len!(0x10000, 0x10_FFFF);
-
-// Let's ensure Rust uses the right representation.
-static_assertions::assert_eq_size!(Utf8Counter, [BigUint; 4]);
+const C4: u32 = range_len!(0x10000..=0x10_FFFF);
 
 /// The last 4 results, used for iterative calculation.
 ///

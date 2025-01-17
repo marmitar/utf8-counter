@@ -71,6 +71,9 @@ use counter::utf8_counter;
 struct Cli {
     /// String length to calculate UTF8 possibilies.
     length: usize,
+    /// Consider all lengths from `0` to `LENGTH`.
+    #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    cumulative: bool,
     /// Print intermediate values.
     #[arg(short, long, action = clap::ArgAction::SetTrue)]
     verbose: bool,
@@ -93,10 +96,15 @@ pub fn main() -> ExitCode {
 
     let mut last = BigUint::ZERO;
     for (i, num) in utf8_counter().take(length).enumerate() {
-        if cli.verbose {
-            eprintln!("{i:>d$}: {num}");
+        if cli.cumulative {
+            last += num;
+        } else {
+            last = num;
         }
-        last = num;
+
+        if cli.verbose {
+            eprintln!("{i:>d$}: {last}");
+        }
     }
 
     let format = CustomFormat::builder().separator("_").build().expect("valid formatter");
