@@ -1,3 +1,5 @@
+//! Calculate how many possible UTF8 strings there are.
+
 // Additional Errors
 #![deny(unsafe_op_in_unsafe_fn)]
 #![deny(clippy::all)]
