@@ -105,18 +105,17 @@ const fn digits(n: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::assert_eq;
+    use proptest::prelude::*;
 
     use super::*;
 
-    #[test]
-    fn digits_calculation() {
-        let m = usize::MAX;
-        #[rustfmt::skip]
-        let cases = [0, 1, 2, 5, 9, 10, 11, 55, 99, 100, 101, m - 5, m - 4, m - 3, m - 2, m - 1, m];
-
-        for num in cases {
-            assert_eq!(digits(num), num.to_string().len());
+    proptest! {
+        #![proptest_config(ProptestConfig {
+            cases: 1000, ..ProptestConfig::default()
+        })]
+        #[test]
+        fn digits_calculation(num: usize) {
+            prop_assert_eq!(digits(num), num.to_string().len());
         }
     }
 }

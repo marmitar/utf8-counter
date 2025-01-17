@@ -13,4 +13,5 @@ static_assertions = "^1.1.0"
 
 [dev-dependencies]
 pretty_assertions = { version = "^1.4.1", features = ["unstable"] }
+proptest = "^1.6.0"
 rayon = "^1.10.0"
