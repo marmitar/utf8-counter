@@ -53,6 +53,12 @@
 #![warn(clippy::wildcard_enum_match_arm)]
 #![warn(clippy::unnecessary_self_imports)]
 
+mod counter;
+
+use counter::utf8_counter;
+
 pub fn main() {
-    println!("Hello, world!");
+    for (i, num) in utf8_counter().take(100).enumerate() {
+        println!("{i:02}: {num}");
+    }
 }
