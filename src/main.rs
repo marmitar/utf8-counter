@@ -58,11 +58,12 @@
 use std::process::ExitCode;
 
 use clap::Parser;
+use num_bigint::BigUint;
+use num_format::{CustomFormat, ToFormattedString};
 
 mod counter;
 
 use counter::utf8_counter;
-use num_bigint::BigUint;
 
 /// Calculate how many possible UTF8 strings there are.
 #[derive(Parser, Debug, Clone)]
@@ -76,6 +77,10 @@ struct Cli {
 }
 
 /// Binary entrypoint.
+///
+/// # Panics
+///
+/// On invalid formatter.
 #[must_use]
 pub fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -94,7 +99,8 @@ pub fn main() -> ExitCode {
         last = num;
     }
 
-    println!("{last}");
+    let format = CustomFormat::builder().separator("_").build().expect("valid formatter");
+    println!("{}", last.to_formatted_string(&format));
     ExitCode::SUCCESS
 }
 
