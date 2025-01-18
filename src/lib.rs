@@ -1,11 +1,13 @@
-//! Iterate over how many UTF8 strings of a specific length are possible.
+//! Calculate how many possible UTF8 strings there are.
 
 use num_bigint::BigUint;
 
 /// Iterate over the number of possible UTF8 strings of each possible length.
 ///
 /// ```
-/// let counter = utf8_counter();
+/// # use num_bigint::ToBigUint;
+/// # use prob8::utf8_counter;
+/// let mut counter = utf8_counter();
 /// assert_eq!(counter.next(), 1.to_biguint());
 /// assert_eq!(counter.next(), 128.to_biguint());
 /// ```
@@ -62,7 +64,9 @@ enum Inner {
 /// Iterate over the number of possible UTF8 strings of each possible length.
 ///
 /// ```
-/// let counter = utf8_counter();
+/// # use num_bigint::ToBigUint;
+/// # use prob8::utf8_counter;
+/// let mut counter = utf8_counter();
 /// assert_eq!(counter.next(), 1.to_biguint());
 /// assert_eq!(counter.next(), 128.to_biguint());
 /// ```
@@ -76,7 +80,7 @@ impl Utf8Counter {
     /// Start the iterator on the first result, $f(0)$.
     #[inline]
     #[must_use]
-    pub const fn new() -> Self {
+    const fn new() -> Self {
         Self { inner: Inner::F0 }
     }
 
