@@ -6,7 +6,7 @@ use clap::Parser;
 use num_bigint::BigUint;
 use num_format::{CustomFormat, ToFormattedString};
 
-use prob8::utf8_counter;
+use utf8_counter::utf8_counter;
 
 /// Calculate how many possible UTF8 strings there are.
 #[derive(Parser, Debug, Clone)]

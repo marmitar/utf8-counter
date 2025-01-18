@@ -6,7 +6,7 @@ use num_bigint::BigUint;
 ///
 /// ```
 /// # use num_bigint::ToBigUint;
-/// # use prob8::utf8_counter;
+/// # use utf8_counter::utf8_counter;
 /// let mut counter = utf8_counter();
 /// assert_eq!(counter.next(), 1.to_biguint());
 /// assert_eq!(counter.next(), 128.to_biguint());
@@ -65,7 +65,7 @@ enum Inner {
 ///
 /// ```
 /// # use num_bigint::ToBigUint;
-/// # use prob8::utf8_counter;
+/// # use utf8_counter::utf8_counter;
 /// let mut counter = utf8_counter();
 /// assert_eq!(counter.next(), 1.to_biguint());
 /// assert_eq!(counter.next(), 128.to_biguint());

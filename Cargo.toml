@@ -1,5 +1,5 @@
 [package]
-name = "prob8"
+name = "utf8-counter"
 version = "0.1.0"
 edition = "2024"
 description = "Calculate how many possible UTF8 strings there are"
