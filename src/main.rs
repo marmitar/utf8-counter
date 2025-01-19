@@ -3,8 +3,7 @@
 use std::process::ExitCode;
 
 use clap::Parser;
-use num_bigint::BigUint;
-use num_format::{CustomFormat, ToFormattedString};
+use rug::Integer;
 
 use utf8_counter::utf8_counter;
 
@@ -37,7 +36,7 @@ pub fn main() -> ExitCode {
 
     let d = digits(cli.length);
 
-    let mut last = BigUint::ZERO;
+    let mut last = Integer::ZERO;
     for (i, num) in utf8_counter().take(length).enumerate() {
         if cli.cumulative {
             last += num;
@@ -50,8 +49,7 @@ pub fn main() -> ExitCode {
         }
     }
 
-    let format = CustomFormat::builder().separator("_").build().expect("valid formatter");
-    println!("{}", last.to_formatted_string(&format));
+    println!("{last}");
     ExitCode::SUCCESS
 }
 

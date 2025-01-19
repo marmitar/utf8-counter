@@ -1,25 +1,32 @@
 //! Calculate how many possible UTF8 strings there are.
 
-use num_bigint::BigUint;
+use rug::{Complete, Integer};
 
 /// Iterate over the number of possible UTF8 strings of each possible length.
 ///
 /// ```
-/// # use num_bigint::ToBigUint;
-/// # use utf8_counter::utf8_counter;
+/// use rug::Integer;
+/// use utf8_counter::utf8_counter;
+///
 /// let mut counter = utf8_counter();
-/// assert_eq!(counter.next(), 1.to_biguint());
-/// assert_eq!(counter.next(), 128.to_biguint());
+/// assert_eq!(counter.next(), Some(Integer::from(1)));
+/// assert_eq!(counter.next(), Some(Integer::from(128)));
 /// ```
-#[repr(transparent)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Utf8Counter {
-    /// Private implementation.
-    inner: Inner,
+    /// The next result, $f(n)$.
+    l0: Integer,
+    /// The last result, $f(n-1)$.
+    l1: Integer,
+    /// $f(n-2)$.
+    l2: Integer,
+    /// $f(n-3)$.
+    l3: Integer,
 }
 
 // Let's ensure Rust uses the right representation.
-static_assertions::assert_eq_size!(Utf8Counter, [BigUint; 4]);
+static_assertions::assert_eq_size!(Utf8Counter, [Integer; 4]);
+static_assertions::assert_eq_size!(Option<Utf8Counter>, [Integer; 4]);
 
 /// Calculates the number of elements in an inclusive range.
 macro_rules! range_len {
@@ -41,38 +48,19 @@ const C3: u16 = range_len!(0x0800..=0xFFFF) - range_len!(0xD800..=0xDFFF);
 /// All 4-byte codepoints, `U+10000` to `U+10FFFF`.
 const C4: u32 = range_len!(0x10000..=0x10_FFFF);
 
-/// The last 4 results, used for iterative calculation.
-///
-/// Calculated as:
-/// - $f(n) = C1 f(n-1) + C2 f(n-2) + C3 f(n-3) + C4 f(n-4)$
-///
-/// Should be binary compatible with `[Option<BigUint>; 4]`.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-enum Inner {
-    /// Next is $f(0)$, no last results.
-    F0,
-    /// Next is $f(1)$, with $f(0)$.
-    F1(BigUint),
-    /// Next is $f(2)$, with $f(1)$ and $f(0)$.
-    F2(BigUint, BigUint),
-    /// Next is $f(3)$, with $f(2)$, $f(1)$ and $f(0)$.
-    F3(BigUint, BigUint, BigUint),
-    /// Next is $f(n)$, with $f(n-1)$, $f(n-2)$, $f(n-3)$ and $f(n-4)$.
-    Fn(BigUint, BigUint, BigUint, BigUint),
-}
-
 /// Iterate over the number of possible UTF8 strings of each possible length.
 ///
 /// ```
-/// # use num_bigint::ToBigUint;
-/// # use utf8_counter::utf8_counter;
+/// use rug::Integer;
+/// use utf8_counter::utf8_counter;
+///
 /// let mut counter = utf8_counter();
-/// assert_eq!(counter.next(), 1.to_biguint());
-/// assert_eq!(counter.next(), 128.to_biguint());
+/// assert_eq!(counter.next(), Some(Integer::from(1)));
+/// assert_eq!(counter.next(), Some(Integer::from(128)));
 /// ```
 #[inline]
 #[must_use]
-pub const fn utf8_counter() -> Utf8Counter {
+pub fn utf8_counter() -> Utf8Counter {
     Utf8Counter::new()
 }
 
@@ -80,48 +68,38 @@ impl Utf8Counter {
     /// Start the iterator on the first result, $f(0)$.
     #[inline]
     #[must_use]
-    const fn new() -> Self {
-        Self { inner: Inner::F0 }
+    fn new() -> Self {
+        Self {
+            l0: Integer::from(1_u8),
+            l1: Integer::ZERO,
+            l2: Integer::ZERO,
+            l3: Integer::ZERO,
+        }
     }
 
     /// Calculate the next value.
     ///
     /// This is a non-fallible version of [`Iterator::next`]. Only allocation failures might happen, which are not
-    /// handled by [`BigUint`].
-    pub fn next_count(&mut self) -> BigUint {
-        let inner = std::mem::replace(&mut self.inner, Inner::F0);
-        match inner {
-            Inner::Fn(l0, l1, l2, l3) => {
-                let ln = C1 * &l0 + C2 * &l1 + C3 * &l2 + C4 * l3;
-                self.inner = Inner::Fn(ln.clone(), l0, l1, l2);
-                ln
-            }
-            Inner::F3(f2, f1, f0) => {
-                let f3 = C1 * &f2 + C2 * &f1 + C3 * &f0;
-                self.inner = Inner::Fn(f3.clone(), f2, f1, f0);
-                f3
-            }
-            Inner::F2(f1, f0) => {
-                let f2 = C1 * &f1 + C2 * &f0;
-                self.inner = Inner::F3(f2.clone(), f1, f0);
-                f2
-            }
-            Inner::F1(f0) => {
-                let f1 = C1 * &f0;
-                self.inner = Inner::F2(f1.clone(), f0);
-                f1
-            }
-            Inner::F0 => {
-                let f0 = BigUint::from(1_u8);
-                self.inner = Inner::F1(f0.clone());
-                f0
-            }
+    /// handled by [`Integer`].
+    pub fn next_count(&mut self) -> Integer {
+        fn c(operation: impl Complete<Completed = Integer>) -> Integer {
+            operation.complete()
         }
+
+        let output = self.l0.clone();
+
+        let ln = c(C1 * &self.l0) + c(C2 * &self.l1) + c(C3 * &self.l2) + c(C4 * &self.l3);
+        std::mem::swap(&mut self.l2, &mut self.l3);
+        std::mem::swap(&mut self.l1, &mut self.l2);
+        std::mem::swap(&mut self.l0, &mut self.l1);
+        self.l0 = ln;
+
+        output
     }
 }
 
 impl Iterator for Utf8Counter {
-    type Item = BigUint;
+    type Item = Integer;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -143,7 +121,6 @@ impl Default for Utf8Counter {
 
 #[cfg(test)]
 mod tests {
-    use num_bigint::ToBigUint;
     use pretty_assertions::assert_eq;
 
     use super::*;
@@ -156,22 +133,22 @@ mod tests {
     fn count_0_bytes() {
         let counted = std::iter::once([]).filter(is_utf8).count();
         #[expect(clippy::iter_nth_zero, reason = "Consitency across tests")]
-        let calculated = utf8_counter().nth(0);
-        assert_eq!(calculated, counted.to_biguint());
+        let calculated = utf8_counter().nth(0).unwrap();
+        assert_eq!(calculated, counted);
     }
 
     #[test]
     fn count_1_byte() {
         let counted = (0x00..=0xFF).map(u8::to_be_bytes).filter(is_utf8).count();
-        let calculated = utf8_counter().nth(1);
-        assert_eq!(calculated, counted.to_biguint());
+        let calculated = utf8_counter().nth(1).unwrap();
+        assert_eq!(calculated, counted);
     }
 
     #[test]
     fn count_2_bytes() {
         let counted = (0x0000..=0xFFFF).map(u16::to_be_bytes).filter(is_utf8).count();
-        let calculated = utf8_counter().nth(2);
-        assert_eq!(calculated, counted.to_biguint());
+        let calculated = utf8_counter().nth(2).unwrap();
+        assert_eq!(calculated, counted);
     }
 
     #[test]
@@ -181,8 +158,8 @@ mod tests {
             .filter(is_utf8)
             .count();
 
-        let calculated = utf8_counter().nth(3);
-        assert_eq!(calculated, counted.to_biguint());
+        let calculated = utf8_counter().nth(3).unwrap();
+        assert_eq!(calculated, counted);
     }
 
     #[test]
@@ -195,7 +172,7 @@ mod tests {
             .filter(is_utf8)
             .count();
 
-        let calculated = utf8_counter().nth(4);
-        assert_eq!(calculated, counted.to_biguint());
+        let calculated = utf8_counter().nth(4).unwrap();
+        assert_eq!(calculated, counted);
     }
 }

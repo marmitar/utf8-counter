@@ -1,27 +1,27 @@
 //! Comparison with other numerical sequences.
 
 use criterion::{AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput, criterion_group, criterion_main};
-use num_bigint::BigUint;
+use rug::{Assign, Integer};
 
 use utf8_counter::utf8_counter;
 
 /// Produces the [factorial](https://en.wikipedia.org/wiki/Factorial) sequence.
-fn factorial() -> impl Iterator<Item = BigUint> {
+fn factorial() -> impl Iterator<Item = Integer> {
     #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     struct Factorial {
         /// Next iteration.
         n: usize,
         /// Next result.
-        f: BigUint,
+        f: Integer,
     }
 
     impl Iterator for Factorial {
-        type Item = BigUint;
+        type Item = Integer;
 
-        fn next(&mut self) -> Option<BigUint> {
+        fn next(&mut self) -> Option<Integer> {
             self.n = self.n.checked_add(1)?;
-            let next = &self.f * self.n;
-            let output = std::mem::replace(&mut self.f, next);
+            let output = std::mem::replace(&mut self.f, Integer::ZERO);
+            self.f.assign(&output * self.n);
             Some(output)
         }
 
@@ -33,24 +33,24 @@ fn factorial() -> impl Iterator<Item = BigUint> {
 
     Factorial {
         n: 0,
-        f: BigUint::from(1_u8),
+        f: Integer::from(1_u8),
     }
 }
 
 /// Produces the [fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence).
-fn fibonacci() -> impl Iterator<Item = BigUint> {
+fn fibonacci() -> impl Iterator<Item = Integer> {
     #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     struct Fibonnaci {
         /// Next element.
-        f0: BigUint,
+        f0: Integer,
         /// The one after that.
-        f1: BigUint,
+        f1: Integer,
     }
 
     impl Iterator for Fibonnaci {
-        type Item = BigUint;
+        type Item = Integer;
 
-        fn next(&mut self) -> Option<BigUint> {
+        fn next(&mut self) -> Option<Integer> {
             let output = self.f0.clone();
             self.f1 += &self.f0;
             std::mem::swap(&mut self.f0, &mut self.f1);
@@ -64,25 +64,25 @@ fn fibonacci() -> impl Iterator<Item = BigUint> {
     }
 
     Fibonnaci {
-        f0: BigUint::from(0_u8),
-        f1: BigUint::from(1_u8),
+        f0: Integer::from(0_u8),
+        f1: Integer::from(1_u8),
     }
 }
 
 /// Sum over all elements of another sequence.
-const fn cumulative(iter: impl Iterator<Item = BigUint>) -> impl Iterator<Item = BigUint> {
+const fn cumulative(iter: impl Iterator<Item = Integer>) -> impl Iterator<Item = Integer> {
     #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     struct Cumulative<I> {
         /// Accumalated sum, and the next result.
-        acc: BigUint,
+        acc: Integer,
         /// Non-accumulated iterator.
         iter: I,
     }
 
-    impl<I: Iterator<Item = BigUint>> Iterator for Cumulative<I> {
-        type Item = BigUint;
+    impl<I: Iterator<Item = Integer>> Iterator for Cumulative<I> {
+        type Item = Integer;
 
-        fn next(&mut self) -> Option<BigUint> {
+        fn next(&mut self) -> Option<Integer> {
             let mut next = self.iter.next()?;
             next += &self.acc;
 
@@ -98,16 +98,16 @@ const fn cumulative(iter: impl Iterator<Item = BigUint>) -> impl Iterator<Item =
     }
 
     Cumulative {
-        acc: BigUint::ZERO,
+        acc: Integer::ZERO,
         iter,
     }
 }
 
 /// Useful for verifying the custom sequences above before any benchmark.
-fn validate_sequence<const N: usize>(iter: impl Iterator<Item = BigUint>, expected: [usize; N]) {
+fn validate_sequence<const N: usize>(iter: impl Iterator<Item = Integer>, expected: [usize; N]) {
     let name = std::any::type_name_of_val(&iter);
     let values: Vec<_> = iter.take(N).collect();
-    assert_eq!(values, expected.map(BigUint::from), "invalid sequence '{name}'");
+    assert_eq!(values, expected.map(Integer::from), "invalid sequence '{name}'");
 }
 
 /// Benchmark the extract of the `n`th element of a sequence.
