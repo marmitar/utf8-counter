@@ -51,10 +51,9 @@ fn fibonacci() -> impl Iterator<Item = Integer> {
         type Item = Integer;
 
         fn next(&mut self) -> Option<Integer> {
-            let output = self.f0.clone();
-            self.f1 += &self.f0;
             std::mem::swap(&mut self.f0, &mut self.f1);
-            Some(output)
+            self.f0 += &self.f1;
+            Some(self.f1.clone())
         }
 
         #[inline]

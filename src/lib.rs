@@ -1,6 +1,6 @@
 //! Calculate how many possible UTF8 strings there are.
 
-use rug::{Complete, Integer};
+use rug::Integer;
 
 /// Iterate over the number of possible UTF8 strings of each possible length.
 ///
@@ -82,19 +82,17 @@ impl Utf8Counter {
     /// This is a non-fallible version of [`Iterator::next`]. Only allocation failures might happen, which are not
     /// handled by [`Integer`].
     pub fn next_count(&mut self) -> Integer {
-        fn c(operation: impl Complete<Completed = Integer>) -> Integer {
-            operation.complete()
-        }
-
-        let output = self.l0.clone();
-
-        let ln = c(C1 * &self.l0) + c(C2 * &self.l1) + c(C3 * &self.l2) + c(C4 * &self.l3);
+        // apply operations on L3
+        self.l3 *= C4;
+        self.l3 += C1 * &self.l0;
+        self.l3 += C2 * &self.l1;
+        self.l3 += C3 * &self.l2;
+        // move L3 to L0
         std::mem::swap(&mut self.l2, &mut self.l3);
         std::mem::swap(&mut self.l1, &mut self.l2);
         std::mem::swap(&mut self.l0, &mut self.l1);
-        self.l0 = ln;
 
-        output
+        self.l1.clone()
     }
 }
 
