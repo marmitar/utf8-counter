@@ -1,100 +1,8 @@
 //! Comparison with other numerical sequences.
 
 use criterion::{AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput, criterion_group, criterion_main};
-use rug::Integer;
 
-use utf8_counter::{SequenceGenerator, utf8_counter};
-
-/// Produces the [factorial](https://en.wikipedia.org/wiki/Factorial) sequence.
-fn factorial() -> impl SequenceGenerator {
-    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    struct Factorial {
-        /// Current iteration.
-        n: usize,
-        /// Current result.
-        f: Integer,
-    }
-
-    impl SequenceGenerator for Factorial {
-        #[inline]
-        fn current(&self) -> &Integer {
-            &self.f
-        }
-
-        fn update(&mut self) {
-            self.n = self.n.checked_add(1).expect("is it even posible?");
-            self.f *= self.n;
-        }
-    }
-
-    Factorial {
-        n: 0,
-        f: Integer::from(1_u8),
-    }
-}
-
-/// Produces the [fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence).
-fn fibonacci() -> impl SequenceGenerator {
-    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    struct Fibonnaci {
-        /// Current element.
-        f0: Integer,
-        /// Last element.
-        f1: Integer,
-    }
-
-    impl SequenceGenerator for Fibonnaci {
-        #[inline]
-        fn current(&self) -> &Integer {
-            &self.f0
-        }
-
-        fn update(&mut self) {
-            std::mem::swap(&mut self.f0, &mut self.f1);
-            self.f0 += &self.f1;
-        }
-    }
-
-    Fibonnaci {
-        f0: Integer::from(0_u8),
-        f1: Integer::from(1_u8),
-    }
-}
-
-/// Sum over all elements of another sequence.
-const fn cumulative(seq: impl SequenceGenerator) -> impl SequenceGenerator {
-    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    struct Cumulative<S> {
-        /// Accumalated sum, and the next result.
-        acc: Integer,
-        /// Non-accumulated iterator.
-        seq: S,
-    }
-
-    impl<S: SequenceGenerator> SequenceGenerator for Cumulative<S> {
-        #[inline]
-        fn current(&self) -> &Integer {
-            &self.acc
-        }
-
-        fn update(&mut self) {
-            self.acc += self.seq.current();
-            self.seq.update();
-        }
-    }
-
-    Cumulative {
-        acc: Integer::ZERO,
-        seq,
-    }
-}
-
-/// Useful for verifying the custom sequences above before any benchmark.
-fn validate_sequence<const N: usize>(seq: impl SequenceGenerator, expected: [usize; N]) {
-    let name = std::any::type_name_of_val(&seq);
-    let values: Vec<_> = seq.cloning().take(N).collect();
-    assert_eq!(values, expected.map(Integer::from), "invalid sequence '{name}'");
-}
+use utf8_counter::{SequenceGenerator, cumulative, factorial, fibonacci, utf8_counter};
 
 /// Benchmark the extract of the `n`th element of a sequence.
 ///
@@ -116,10 +24,6 @@ macro_rules! bench_iterator {
 ///
 /// On memory allocation failures (and possibly on internal conversion errors, which shouldn't happen).
 pub fn sequence_iter(c: &mut Criterion) {
-    validate_sequence(factorial(), [1, 1, 2, 6, 24, 120, 720, 5_040, 40_320, 362_880]);
-    validate_sequence(fibonacci(), [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144]);
-    validate_sequence(cumulative(factorial()), [0, 1, 2, 4, 10, 34, 154, 874]);
-
     let mut group = c.benchmark_group("Sequence");
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
     for n in [64, 128, 256, 512, 768, 1024, 1536, 2048] {
