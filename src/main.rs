@@ -42,9 +42,7 @@ fn last(counter: &mut Utf8Counter, length: usize, cumulative: bool, verbose: boo
     let digits = min_digits(length);
 
     let mut sum = Integer::ZERO;
-    for i in 0..=length {
-        let current = counter.current();
-
+    counter.until_n(length, |i, current| {
         let target = if cumulative {
             sum += current;
             &sum
@@ -55,11 +53,7 @@ fn last(counter: &mut Utf8Counter, length: usize, cumulative: bool, verbose: boo
         if verbose {
             eprintln!("{i:>digits$}: {target}");
         }
-
-        if i < length {
-            counter.update();
-        }
-    }
+    });
 
     if cumulative {
         Cow::Owned(sum)

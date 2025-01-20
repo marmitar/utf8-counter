@@ -2,7 +2,7 @@
 
 use rug::Integer;
 
-/// Something that generates an infinite sequence of numbers.
+/// Something that generates an infinite sequence of numbers, starting from zero.
 pub trait SequenceGenerator {
     /// Latest number on the sequence.
     #[must_use]
@@ -19,12 +19,23 @@ pub trait SequenceGenerator {
         self.current()
     }
 
+    /// Iterates until the element at position `n` on the sequence.
+    ///
+    /// Since sequences starts at zero, this will yield the first `n+1` elements.
+    #[inline]
+    fn until_n(&mut self, n: usize, mut apply: impl FnMut(usize, &Integer)) {
+        for i in 0..=n {
+            apply(i, self.current());
+            if i < n {
+                self.update();
+            }
+        }
+    }
+
     /// Update `n` steps on the sequence, and return the result.
     #[inline]
     fn nth(&mut self, n: usize) -> &Integer {
-        for _ in 0..n {
-            self.update();
-        }
+        self.until_n(n, |_, _| {});
         self.current()
     }
 
