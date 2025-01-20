@@ -81,6 +81,7 @@ impl SequenceGenerator for Utf8Counter {
     ///
     /// This is a non-fallible version of [`Iterator::next`]. Only allocation failures might happen, which are not
     /// handled by [`Integer`].
+    #[inline]
     fn update(&mut self) {
         // apply operations on L3
         self.l3 *= C4;

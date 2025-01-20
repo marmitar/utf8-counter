@@ -21,6 +21,11 @@ rayon = "^1.10.0"
 name = "counter"
 harness = false
 
+[profile.release]
+panic = "abort"
+strip = true
+lto = true
+
 [lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
 

@@ -20,6 +20,7 @@ pub trait SequenceGenerator {
     }
 
     /// Update `n` steps on the sequence, and return the result.
+    #[inline]
     fn nth(&mut self, n: usize) -> &Integer {
         for _ in 0..n {
             self.update();
@@ -27,6 +28,7 @@ pub trait SequenceGenerator {
         self.current()
     }
 
+    /// Iterator over cloned elements of a sequence.
     #[inline]
     fn cloning(self) -> CloningIterator<Self>
     where
@@ -47,6 +49,7 @@ pub struct CloningIterator<S> {
 impl<S: SequenceGenerator> Iterator for CloningIterator<S> {
     type Item = Integer;
 
+    #[inline]
     fn next(&mut self) -> Option<Integer> {
         let next = self.sequence.current().clone();
         self.sequence.update();
@@ -60,6 +63,7 @@ impl<S: SequenceGenerator> Iterator for CloningIterator<S> {
 }
 
 /// Produces the [factorial](https://en.wikipedia.org/wiki/Factorial) sequence.
+#[inline]
 #[must_use]
 pub fn factorial() -> Factorial {
     Factorial {
@@ -83,6 +87,7 @@ impl SequenceGenerator for Factorial {
         &self.f
     }
 
+    #[inline]
     fn update(&mut self) {
         self.n = self.n.checked_add(1).expect("is it even posible?");
         self.f *= self.n;
@@ -90,6 +95,7 @@ impl SequenceGenerator for Factorial {
 }
 
 /// Produces the [fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence).
+#[inline]
 #[must_use]
 pub fn fibonacci() -> Fibonnaci {
     Fibonnaci {
@@ -113,6 +119,7 @@ impl SequenceGenerator for Fibonnaci {
         &self.f0
     }
 
+    #[inline]
     fn update(&mut self) {
         std::mem::swap(&mut self.f0, &mut self.f1);
         self.f0 += &self.f1;
@@ -120,6 +127,7 @@ impl SequenceGenerator for Fibonnaci {
 }
 
 /// Sum over all elements of another sequence.
+#[inline]
 #[must_use]
 pub const fn cumulative<S: SequenceGenerator>(seq: S) -> Cumulative<S> {
     Cumulative {
@@ -143,6 +151,7 @@ impl<S: SequenceGenerator> SequenceGenerator for Cumulative<S> {
         &self.acc
     }
 
+    #[inline]
     fn update(&mut self) {
         self.acc += self.seq.current();
         self.seq.update();
