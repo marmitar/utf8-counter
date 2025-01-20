@@ -1,33 +1,29 @@
 //! Comparison with other numerical sequences.
 
 use criterion::{AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput, criterion_group, criterion_main};
-use rug::{Assign, Integer};
+use rug::Integer;
 
-use utf8_counter::utf8_counter;
+use utf8_counter::{SequenceGenerator, utf8_counter};
 
 /// Produces the [factorial](https://en.wikipedia.org/wiki/Factorial) sequence.
-fn factorial() -> impl Iterator<Item = Integer> {
+fn factorial() -> impl SequenceGenerator {
     #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     struct Factorial {
-        /// Next iteration.
+        /// Current iteration.
         n: usize,
-        /// Next result.
+        /// Current result.
         f: Integer,
     }
 
-    impl Iterator for Factorial {
-        type Item = Integer;
-
-        fn next(&mut self) -> Option<Integer> {
-            self.n = self.n.checked_add(1)?;
-            let output = std::mem::replace(&mut self.f, Integer::ZERO);
-            self.f.assign(&output * self.n);
-            Some(output)
+    impl SequenceGenerator for Factorial {
+        #[inline]
+        fn current(&self) -> &Integer {
+            &self.f
         }
 
-        #[inline]
-        fn size_hint(&self) -> (usize, Option<usize>) {
-            (usize::MAX - 1, Some(usize::MAX - 1))
+        fn update(&mut self) {
+            self.n = self.n.checked_add(1).expect("is it even posible?");
+            self.f *= self.n;
         }
     }
 
@@ -38,27 +34,24 @@ fn factorial() -> impl Iterator<Item = Integer> {
 }
 
 /// Produces the [fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence).
-fn fibonacci() -> impl Iterator<Item = Integer> {
+fn fibonacci() -> impl SequenceGenerator {
     #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
     struct Fibonnaci {
-        /// Next element.
+        /// Current element.
         f0: Integer,
-        /// The one after that.
+        /// Last element.
         f1: Integer,
     }
 
-    impl Iterator for Fibonnaci {
-        type Item = Integer;
-
-        fn next(&mut self) -> Option<Integer> {
-            std::mem::swap(&mut self.f0, &mut self.f1);
-            self.f0 += &self.f1;
-            Some(self.f1.clone())
+    impl SequenceGenerator for Fibonnaci {
+        #[inline]
+        fn current(&self) -> &Integer {
+            &self.f0
         }
 
-        #[inline]
-        fn size_hint(&self) -> (usize, Option<usize>) {
-            (usize::MAX, None)
+        fn update(&mut self) {
+            std::mem::swap(&mut self.f0, &mut self.f1);
+            self.f0 += &self.f1;
         }
     }
 
@@ -69,43 +62,37 @@ fn fibonacci() -> impl Iterator<Item = Integer> {
 }
 
 /// Sum over all elements of another sequence.
-const fn cumulative(iter: impl Iterator<Item = Integer>) -> impl Iterator<Item = Integer> {
+const fn cumulative(seq: impl SequenceGenerator) -> impl SequenceGenerator {
     #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    struct Cumulative<I> {
+    struct Cumulative<S> {
         /// Accumalated sum, and the next result.
         acc: Integer,
         /// Non-accumulated iterator.
-        iter: I,
+        seq: S,
     }
 
-    impl<I: Iterator<Item = Integer>> Iterator for Cumulative<I> {
-        type Item = Integer;
-
-        fn next(&mut self) -> Option<Integer> {
-            let mut next = self.iter.next()?;
-            next += &self.acc;
-
-            let output = std::mem::replace(&mut self.acc, next);
-            Some(output)
+    impl<S: SequenceGenerator> SequenceGenerator for Cumulative<S> {
+        #[inline]
+        fn current(&self) -> &Integer {
+            &self.acc
         }
 
-        #[inline]
-        fn size_hint(&self) -> (usize, Option<usize>) {
-            let (lo, hi) = self.iter.size_hint();
-            (lo.saturating_add(1), hi.and_then(|hi| hi.checked_add(1)))
+        fn update(&mut self) {
+            self.acc += self.seq.current();
+            self.seq.update();
         }
     }
 
     Cumulative {
         acc: Integer::ZERO,
-        iter,
+        seq,
     }
 }
 
 /// Useful for verifying the custom sequences above before any benchmark.
-fn validate_sequence<const N: usize>(iter: impl Iterator<Item = Integer>, expected: [usize; N]) {
-    let name = std::any::type_name_of_val(&iter);
-    let values: Vec<_> = iter.take(N).collect();
+fn validate_sequence<const N: usize>(seq: impl SequenceGenerator, expected: [usize; N]) {
+    let name = std::any::type_name_of_val(&seq);
+    let values: Vec<_> = seq.cloning().take(N).collect();
     assert_eq!(values, expected.map(Integer::from), "invalid sequence '{name}'");
 }
 
@@ -117,7 +104,7 @@ macro_rules! bench_iterator {
     ($bench:ident, $name:literal, $n:ident, $iter:expr) => {
         $bench.bench_with_input(BenchmarkId::new($name, $n), &$n, |b, &size| {
             b.iter(move || {
-                $iter.nth(size).expect("not enough items");
+                $iter.nth(size);
             });
         });
     };
