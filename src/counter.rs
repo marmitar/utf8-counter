@@ -85,9 +85,9 @@ impl SequenceGenerator for Utf8Counter {
     fn update(&mut self) {
         // apply operations on L3
         self.l3 *= C4;
-        self.l3 += C1 * &self.l0;
-        self.l3 += C2 * &self.l1;
         self.l3 += C3 * &self.l2;
+        self.l3 += C2 * &self.l1;
+        self.l3 += C1 * &self.l0;
         // move L3 to L0
         std::mem::swap(&mut self.l2, &mut self.l3);
         std::mem::swap(&mut self.l1, &mut self.l2);

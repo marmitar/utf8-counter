@@ -1,6 +1,6 @@
 //! Comparison with other numerical sequences.
 
-use criterion::{criterion_group, criterion_main, AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput};
+use criterion::{AxisScale, BenchmarkId, Criterion, PlotConfiguration, Throughput, criterion_group, criterion_main};
 
 use rug::integer::IntegerExt64;
 use utf8_counter::{SequenceGenerator, cumulative, factorial, fibonacci, utf8_counter};
@@ -23,7 +23,7 @@ fn calculate_throughput(mut sequence: impl SequenceGenerator, elements: usize, t
         ThroughputTarget::Iterations => {
             let total = elements.try_into().expect("cannot fit into u64");
             Throughput::Elements(total)
-        },
+        }
         ThroughputTarget::TotalBytes => {
             let mut output_bytes = 0;
             sequence.until_n(elements, |_, element| {
@@ -31,7 +31,7 @@ fn calculate_throughput(mut sequence: impl SequenceGenerator, elements: usize, t
                 output_bytes += bits.div_ceil(8);
             });
             Throughput::Bytes(output_bytes)
-        },
+        }
     }
 }
 
