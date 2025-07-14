@@ -8,7 +8,7 @@ license = "AGPL-3.0-or-later"
 publish = false
 
 [dependencies]
-clap = { version = "^4.5.40", features = ["derive"] }
+clap = { version = "^4.5.41", features = ["derive"] }
 rug = "^1.27.0"
 static_assertions = "^1.1.0"
 
