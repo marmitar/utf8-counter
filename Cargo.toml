@@ -9,6 +9,8 @@ publish = false
 
 [dependencies]
 clap = { version = "^4.5.41", features = ["derive"] }
+# 'use-system-libs' required for GCC 15, see https://gitlab.com/tspiteri/gmp-mpfr-sys/-/issues/39
+gmp-mpfr-sys = { version = "^1.6.5", features = ["use-system-libs"] }
 rug = "^1.27.0"
 static_assertions = "^1.1.0"
 
