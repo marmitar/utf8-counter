@@ -8,7 +8,7 @@ license = "AGPL-3.0-or-later"
 publish = false
 
 [dependencies]
-clap = { version = "^4.5.41", features = ["derive"] }
+clap = { version = "^4.5.43", features = ["derive"] }
 # 'use-system-libs' required for GCC 15, see https://gitlab.com/tspiteri/gmp-mpfr-sys/-/issues/39
 gmp-mpfr-sys = { version = "^1.6.5", default-features = false, features = ["use-system-libs"] }
 rug = { version = "^1.27.0", default-features = false, features = ["integer"] }
