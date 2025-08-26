@@ -18,7 +18,7 @@ static_assertions = "^1.1.0"
 criterion = "^0.7.0"
 pretty_assertions = { version = "^1.4.1", features = ["unstable"] }
 proptest = { version = "^1.7.0", features = ["hardware-rng"] }
-rayon = "^1.10.0"
+rayon = "^1.11.0"
 
 [[bench]]
 name = "counter"
