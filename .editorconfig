@@ -1,17 +1,22 @@
+# See https://editorconfig.org/
 root = true
 
 [*]
+# https://github.com/editorconfig/editorconfig/wiki/EditorConfig-Properties
 charset = utf-8
 end_of_line = lf
 indent_size = 4
 indent_style = space
-indent_brace_style = K&R
 trim_trailing_whitespace = true
 insert_final_newline = true
 max_line_length = 120
-quote_type = "single"
+# Proposals
+indent_brace_style = K&R
 curly_bracket_next_line = false
+spaces_around_operators = true
+quote_type = single
 
+# Most config files
 [*.{md,toml,json,yml,yaml}]
 indent_size = 2
-quote_type = "double"
+quote_type = double
