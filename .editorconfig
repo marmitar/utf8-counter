@@ -21,7 +21,7 @@ function_next_line = false
 binary_next_line = true
 space_redirects = true
 
-# Let's go with 2 spaces in scripts
+# Scripts tend to use 2 spaces
 [[shell]]
 indent_size = 2
 
